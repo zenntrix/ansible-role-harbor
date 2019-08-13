@@ -1,11 +1,23 @@
-- name: Installing docker python bindings
+#- name: Installing docker python bindings
+#  become: true
+#  pip:
+#    state: present
+#    name:
+#      - docker
+#      - pyyaml>=3.11
+#      - docker-compose>=1.7.0
+
+- name: Installing docker-compose
   become: true
-  pip:
-    state: present
-    name:
-      - docker
-      - pyyaml>=3.11
-      - docker-compose>=1.7.0
+  get_url: url={{ http_server }}/docker-compose-Linux-x86_64 dest=/usr/local/bin/docker-compose validate_certs=no
+  
+- name: Chmod docker-compose
+  become: true
+  file:
+    path: /usr/local/bin/docker-compose
+    owner: 1000
+    group: 1000
+    mode: 0750
 
 - name: Checking if Harbor is already installed
   stat:
@@ -34,10 +46,10 @@
   when:
     - not harbor_folder_st.stat.exists or (harbor_folder_st.stat.isdir is defined and not harbor_folder_st.stat.isdir)
 
-- name: Copying over harbor.cfg
+- name: Copying over harbor.yml
   template:
-    src: harbor.cfg.j2
-    dest: "{{ harbor_install_dir }}/harbor/harbor.cfg"
+    src: harbor.yml.j2
+    dest: "{{ harbor_install_dir }}/harbor/harbor.yml"
   when:
     - not harbor_folder_st.stat.exists or (harbor_folder_st.stat.isdir is defined and not harbor_folder_st.stat.isdir)
 

@@ -1,7 +1,7 @@
-version: '2'
+version: '2.3'
 services:
   log:
-    image: goharbor/harbor-log:v1.7.4
+    image: goharbor/harbor-log:v1.8.1
     container_name: harbor-log
     restart: always
     dns_search: .
@@ -20,7 +20,7 @@ services:
     networks:
       - harbor
   registry:
-    image: goharbor/registry-photon:v2.6.2-v1.7.4
+    image: goharbor/registry-photon:v2.7.1-patch-2819-v1.8.1
     container_name: registry
     restart: always
     cap_drop:
@@ -30,9 +30,11 @@ services:
       - SETGID
       - SETUID
     volumes:
-      - {{ harbor_datadir }}/registry:/storage:z
+      - /data/registry:/storage:z
       - ./common/config/registry/:/etc/registry/:z
-      - ./common/config/custom-ca-bundle.crt:/harbor_cust_cert/custom-ca-bundle.crt:z
+      - type: bind
+        source: /data/secret/registry/root.crt
+        target: /etc/registry/root.crt
     networks:
       - harbor
     dns_search: .
@@ -40,11 +42,11 @@ services:
       - log
     logging:
       driver: "syslog"
-      options:
+      options:  
         syslog-address: "tcp://127.0.0.1:1514"
         tag: "registry"
   registryctl:
-    image: goharbor/harbor-registryctl:v1.7.4
+    image: goharbor/harbor-registryctl:v1.8.1
     container_name: registryctl
     env_file:
       - ./common/config/registryctl/env
@@ -56,9 +58,11 @@ services:
       - SETGID
       - SETUID
     volumes:
-      - {{ harbor_datadir }}/registry:/storage:z
+      - /data/registry:/storage:z
       - ./common/config/registry/:/etc/registry/:z
-      - ./common/config/registryctl/config.yml:/etc/registryctl/config.yml:z
+      - type: bind
+        source: ./common/config/registryctl/config.yml
+        target: /etc/registryctl/config.yml
     networks:
       - harbor
     dns_search: .
@@ -66,11 +70,11 @@ services:
       - log
     logging:
       driver: "syslog"
-      options:
+      options:  
         syslog-address: "tcp://127.0.0.1:1514"
         tag: "registryctl"
   postgresql:
-    image: goharbor/harbor-db:v1.7.4
+    image: goharbor/harbor-db:v1.8.1
     container_name: harbor-db
     restart: always
     cap_drop:
@@ -81,9 +85,9 @@ services:
       - SETGID
       - SETUID
     volumes:
-      - {{ harbor_datadir }}/database:/var/lib/postgresql/data:z
+      - /data/database:/var/lib/postgresql/data:z
     networks:
-      - harbor
+      harbor:
     dns_search: .
     env_file:
       - ./common/config/db/env
@@ -91,37 +95,11 @@ services:
       - log
     logging:
       driver: "syslog"
-      options:
+      options:  
         syslog-address: "tcp://127.0.0.1:1514"
         tag: "postgresql"
-  adminserver:
-    image: goharbor/harbor-adminserver:v1.7.4
-    container_name: harbor-adminserver
-    env_file:
-      - ./common/config/adminserver/env
-    restart: always
-    cap_drop:
-      - ALL
-    cap_add:
-      - CHOWN
-      - SETGID
-      - SETUID
-    volumes:
-      - {{ harbor_datadir }}/config/:/etc/adminserver/config/:z
-      - {{ harbor_datadir }}/secretkey:/etc/adminserver/key:z
-      - {{ harbor_datadir }}/:/data/:z
-    networks:
-      - harbor
-    dns_search: .
-    depends_on:
-      - log
-    logging:
-      driver: "syslog"
-      options:
-        syslog-address: "tcp://127.0.0.1:1514"
-        tag: "adminserver"
   core:
-    image: goharbor/harbor-core:v1.7.4
+    image: goharbor/harbor-core:v1.8.1
     container_name: harbor-core
     env_file:
       - ./common/config/core/env
@@ -132,27 +110,32 @@ services:
       - SETGID
       - SETUID
     volumes:
-      - ./common/config/core/app.conf:/etc/core/app.conf:z
-      - ./common/config/core/private_key.pem:/etc/core/private_key.pem:z
+      - /data/ca_download/:/etc/core/ca/:z
+      - /data/psc/:/etc/core/token/:z
+      - /data/:/data/:z
       - ./common/config/core/certificates/:/etc/core/certificates/:z
-      - {{ harbor_datadir }}/secretkey:/etc/core/key:z
-      - {{ harbor_datadir }}/ca_download/:/etc/core/ca/:z
-      - {{ harbor_datadir }}/psc/:/etc/core/token/:z
-      - {{ harbor_datadir }}/:/data/:z
+      - type: bind
+        source: ./common/config/core/app.conf
+        target: /etc/core/app.conf
+      - type: bind
+        source: /data/secret/core/private_key.pem
+        target: /etc/core/private_key.pem
+      - type: bind
+        source: /data/secret/keys/secretkey
+        target: /etc/core/key
     networks:
-      - harbor
+      harbor:
     dns_search: .
     depends_on:
       - log
-      - adminserver
       - registry
     logging:
       driver: "syslog"
-      options:
+      options:  
         syslog-address: "tcp://127.0.0.1:1514"
         tag: "core"
   portal:
-    image: goharbor/harbor-portal:v1.7.4
+    image: goharbor/harbor-portal:v1.8.1
     container_name: harbor-portal
     restart: always
     cap_drop:
@@ -175,7 +158,7 @@ services:
         tag: "portal"
 
   jobservice:
-    image: goharbor/harbor-jobservice:v1.7.4
+    image: goharbor/harbor-jobservice:v1.8.1
     container_name: harbor-jobservice
     env_file:
       - ./common/config/jobservice/env
@@ -187,23 +170,24 @@ services:
       - SETGID
       - SETUID
     volumes:
-      - {{ harbor_datadir }}/job_logs:/var/log/jobs:z
-      - ./common/config/jobservice/config.yml:/etc/jobservice/config.yml:z
+      - /data/job_logs:/var/log/jobs:z
+      - type: bind
+        source: ./common/config/jobservice/config.yml
+        target: /etc/jobservice/config.yml
     networks:
       - harbor
     dns_search: .
     depends_on:
       - redis
       - core
-      - adminserver
     logging:
       driver: "syslog"
       options:
         syslog-address: "tcp://127.0.0.1:1514"
         tag: "jobservice"
   redis:
-    image: goharbor/redis-photon:v1.7.4
-    container_name: {{ harbor_redis_host }}
+    image: goharbor/redis-photon:v1.8.1
+    container_name: redis
     restart: always
     cap_drop:
       - ALL
@@ -212,9 +196,9 @@ services:
       - SETGID
       - SETUID
     volumes:
-      - {{ harbor_datadir }}/redis:/var/lib/redis
+      - /data/redis:/var/lib/redis
     networks:
-      - harbor
+      harbor:
     dns_search: .
     depends_on:
       - log
@@ -224,7 +208,7 @@ services:
         syslog-address: "tcp://127.0.0.1:1514"
         tag: "redis"
   proxy:
-    image: goharbor/nginx-photon:v1.7.4
+    image: goharbor/nginx-photon:v1.8.1
     container_name: nginx
     restart: always
     cap_drop:
@@ -240,9 +224,7 @@ services:
       - harbor
     dns_search: .
     ports:
-      - {{ harbor_exposed_http_port | default(80) }}:80
-      - {{ harbor_exposed_https_port | default(443) }}:443
-      - 4443:4443
+      - 80:80
     depends_on:
       - postgresql
       - registry
@@ -251,10 +233,9 @@ services:
       - log
     logging:
       driver: "syslog"
-      options:
+      options:  
         syslog-address: "tcp://127.0.0.1:1514"
         tag: "proxy"
 networks:
   harbor:
     external: false
-
