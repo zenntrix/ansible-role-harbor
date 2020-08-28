@@ -1,6 +1,11 @@
 ---
-harbor_release: 1.8.0
-harbor_version: 1.8.1
+
+harbor_release: 2.0.0
+harbor_version: 2.0.2
+http_server: "https://github.com/goharbor/harbor/releases/download/v{{ harbor_version }}/"
+
+#harbor_release: 1.8.0
+#harbor_version: 1.8.1
 harbor_url: "{{ http_server }}/harbor-offline-installer-v{{ harbor_version }}.tgz"
 
 
@@ -58,6 +63,6 @@ harbor_api_url: "{{ harbor_ui_url_protocol }}://{{ harbor_hostname }}:{{ harbor_
 #     auto_scan: "true"
 
 
-harbor_installer_with: 
-harbor_extra_compose_files: 
+harbor_installer_with:
+harbor_extra_compose_files:
 harbor_docker_compose_files:
