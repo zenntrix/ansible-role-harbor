@@ -53,6 +53,9 @@ harbor_api_port: "{% if harbor_ui_url_protocol == 'http' %}{{harbor_exposed_http
 # If you are running Harbor behind your own proxy, override this as it might not match with Harbor.cfg values.
 harbor_api_url: "{{ harbor_ui_url_protocol }}://{{ harbor_hostname }}:{{ harbor_api_port }}/api"
 
+harbor_ssl_cert: "{{ harbor_install_dir }}/harbor/ssl/harbor.crt"
+harbor_ssl_cert_key: "{{ harbor_install_dir }}/harbor/ssl/harbor.key"
+
 # Example to create project on install
 # harbor_projects:
 #   - project_name: test

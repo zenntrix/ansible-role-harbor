@@ -1,3 +1,4 @@
+---
 #- name: Installing docker python bindings
 #  become: true
 #  pip:
@@ -21,14 +22,37 @@
 
 - name: Checking if Harbor is already installed
   stat:
-    path: "{{ harbor_install_dir }}/harbor"
+    path: "{{ harbor_install_dir }}/harbor/harbor.yml"
   register: harbor_folder_st
 
-- name: "Downloading Harbor {{ harbor_version }} (offline installer)"
-  get_url:
-    url: "{{ harbor_url }}"
-    dest: "/tmp/harbor.tgz"
-    validate_certs: false
+- name: install dedendency
+  package:
+    name: "{{ harbor_packages }}"
+    state: present
+
+- block:
+
+    - name: create local temporary path
+      become: false
+      file:
+        path: "{{ local_tmp_directory }}"
+        state: directory
+      delegate_to: localhost
+
+    - name: "Downloading Harbor {{ harbor_version }} (offline installer)"
+      get_url:
+        url: "{{ harbor_url }}"
+        dest: "{{ local_tmp_directory }}/harbor-{{ harbor_version }}.tgz"
+        validate_certs: false
+      become: false
+      delegate_to: localhost
+
+    - name: deploy application archiv
+      copy:
+        src: "{{ local_tmp_directory }}/harbor-{{ harbor_version }}.tgz"
+        dest: "/tmp/harbor.tgz"
+        mode: 0644
+
   when:
     - not harbor_folder_st.stat.exists or (harbor_folder_st.stat.isdir is defined and not harbor_folder_st.stat.isdir)
 
@@ -36,13 +60,14 @@
   file:
     path: "{{ harbor_install_dir }}"
     state: directory
-    mode: o+r
+    mode: 0644
+    # mode: o+r
   when:
     - not harbor_folder_st.stat.exists or (harbor_folder_st.stat.isdir is defined and not harbor_folder_st.stat.isdir)
 
 - name: "Uncompressing Harbor installer..."
   unarchive:
-    remote_src: True
+    remote_src: true
     src: /tmp/harbor.tgz
     dest: "{{ harbor_install_dir }}"
     creates: "{{ harbor_install_dir }}/harbor"
@@ -53,6 +78,7 @@
   template:
     src: harbor.yml.j2
     dest: "{{ harbor_install_dir }}/harbor/harbor.yml"
+    mode: 0640
   when:
     - not harbor_folder_st.stat.exists or (harbor_folder_st.stat.isdir is defined and not harbor_folder_st.stat.isdir)
 
@@ -60,6 +86,7 @@
   template:
     src: docker-compose.yml.j2
     dest: "{{ harbor_install_dir }}/harbor/docker-compose.yml"
+    mode: 0640
   when:
     - not harbor_folder_st.stat.exists or (harbor_folder_st.stat.isdir is defined and not harbor_folder_st.stat.isdir)
 
@@ -67,7 +94,8 @@
   template:
     src: prepare.j2
     dest: "{{ harbor_install_dir }}/harbor/prepare"
-    mode: a+x
+    mode: 0640
+    # mode: a+x
   when:
     - not harbor_folder_st.stat.exists or (harbor_folder_st.stat.isdir is defined and not harbor_folder_st.stat.isdir)
 
@@ -75,6 +103,7 @@
   file:
     path: '{{ harbor_ssl_cert | dirname }}'
     state: directory
+    mode: 0750
   when:
     - not harbor_folder_st.stat.exists or (harbor_folder_st.stat.isdir is defined and not harbor_folder_st.stat.isdir)
 
@@ -90,18 +119,20 @@
     path: "{{ harbor_install_dir }}/harbor/common/templates/nginx/{{ item }}"
     regexp: '(proxy_set_header X-Forwarded-Proto \$\$scheme;)'
     replace: '# \1'
-    backup: yes
+    backup: true
   when: harbor_behind_proxy is defined and harbor_behind_proxy
   with_items:
     - "nginx.http.conf"
     - "nginx.https.conf"
 
 - name: Running Harbor installer...
-  become: yes
+  become: true
   command: "./install.sh {{ harbor_installer_with }} {{ harbor_installer_extra_args }}"
   args:
     chdir: "{{ harbor_install_dir }}/harbor"
     creates: '{{ harbor_install_dir }}/harbor/harbor_install_log.txt'
+  environment:
+    TERM: xterm-256color
   when:
     - not harbor_folder_st.stat.exists or (harbor_folder_st.stat.isdir is defined and not harbor_folder_st.stat.isdir)
 
@@ -111,7 +142,7 @@
     owner: 10000
     mode: 0750
     group: docker
-    recurse: yes
+    recurse: true
   when:
     - not harbor_folder_st.stat.exists or (harbor_folder_st.stat.isdir is defined and not harbor_folder_st.stat.isdir)
 
@@ -121,7 +152,7 @@
     owner: 10000
     mode: o+rx
     group: docker
-    recurse: yes
+    recurse: true
   when:
     - not harbor_folder_st.stat.exists or (harbor_folder_st.stat.isdir is defined and not harbor_folder_st.stat.isdir)
 
@@ -131,7 +162,7 @@
     path: "{{ harbor_install_dir }}/harbor/common/config/registry/config.yml"
     regexp: 'realm: (https|http)://(.*)'
     replace: 'realm: {{ harbor_registry_realm_protocol }}://\2'
-    backup: yes
+    backup: true
   when: harbor_behind_proxy is defined and harbor_behind_proxy and harbor_registry_realm_protocol != harbor_ui_url_protocol
 
 
@@ -159,8 +190,8 @@
       - 201
       - 409 # already created
     body_format: json
-    force_basic_auth: yes
-    return_content: yes
+    force_basic_auth: true
+    return_content: true
     body: "{{ lookup('template', 'templates/create_project.j2') }}"
   when: harbor_projects is defined
   with_items: "{{ harbor_projects }}"
@@ -182,8 +213,8 @@
       - 201
       - 409 # already created
     body_format: json
-    force_basic_auth: yes
-    return_content: yes
+    force_basic_auth: true
+    return_content: true
     body: "{{ lookup('template', 'templates/create_user.j2') }}"
   when: harbor_users is defined and harbor_self_registration == "off"
   with_items: "{{ harbor_users }}"

@@ -1,4 +1,5 @@
 ---
+
 # docker-compose and restart have trouble with syslog logging driver
 # see https://github.com/goharbor/harbor/issues/129
 # To go around that, we explicitely stop and only then start again.

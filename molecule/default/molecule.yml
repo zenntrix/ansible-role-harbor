@@ -9,12 +9,12 @@ lint: |
 
 platforms:
 
-  - name: centos-8
-    image: paulfantom/centos-molecule:8
-    docker_host: "${DOCKER_HOST:-unix://run/docker.sock}"
-    privileged: true
-    volumes:
-      - /sys/fs/cgroup:/sys/fs/cgroup:ro
+  # - name: centos-8
+  #   image: paulfantom/centos-molecule:8
+  #   docker_host: "${DOCKER_HOST:-unix://run/docker.sock}"
+  #   privileged: true
+  #   volumes:
+  #     - /sys/fs/cgroup:/sys/fs/cgroup:ro
 
   - name: debian-10
     image: paulfantom/debian-molecule:10
@@ -27,14 +27,14 @@ provisioner:
   name: ansible
   config_options:
     defaults:
-      host_key_checking: False
-      deprecation_warnings: True
+      # host_key_checking: False
+      # deprecation_warnings: True
       stdout_callback: yaml
-      remote_tmp: /tmp/.ansible-${USER}/tmp
+      remote_tmp: /tmp/ansible-${USER}/tmp
       # callback_whitelist: profile_tasks
       # gather_subset: '!hardware'
     diff:
-     always: True
+      always: True
 
   lint:
     name: ansible-lint
