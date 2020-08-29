@@ -22,7 +22,7 @@
 
 - name: Checking if Harbor is already installed
   stat:
-    path: "{{ harbor_install_dir }}/harbor/harbor.yml"
+    path: "{{ harbor_install_dir }}/harbor/common/config"
   register: harbor_folder_st
 
 - name: install dedendency
@@ -94,7 +94,7 @@
   template:
     src: prepare.j2
     dest: "{{ harbor_install_dir }}/harbor/prepare"
-    mode: 0640
+    mode: 0750
     # mode: a+x
   when:
     - not harbor_folder_st.stat.exists or (harbor_folder_st.stat.isdir is defined and not harbor_folder_st.stat.isdir)
@@ -132,7 +132,8 @@
     chdir: "{{ harbor_install_dir }}/harbor"
     creates: '{{ harbor_install_dir }}/harbor/harbor_install_log.txt'
   environment:
-    TERM: xterm-256color
+    PATH: "/usr/local/bin:{{ ansible_env.PATH }}"
+    TERM: xterm
   when:
     - not harbor_folder_st.stat.exists or (harbor_folder_st.stat.isdir is defined and not harbor_folder_st.stat.isdir)
 
@@ -202,8 +203,15 @@
 #   when: harbor_users is defined and harbor_self_registration == "off"
 #   with_items: "{{ harbor_users }}"
 
+- name: "check password length"
+  assert:
+    that:
+      - item.password | default("HarborUser12345") | length > 8
+    quiet: true
+    success_msg: "Password length is greater 8"
+  with_items: "{{ harbor_users }}"
 
-- name: "Creating users..."
+- name: "Creating users ... {{ harbor_api_url }}/users"
   uri:
     url: "{{ harbor_api_url }}/users"
     method: POST
@@ -212,6 +220,8 @@
     status_code:
       - 201
       - 409 # already created
+    headers:
+      Content-Type: application/json
     body_format: json
     force_basic_auth: true
     return_content: true
