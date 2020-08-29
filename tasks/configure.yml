@@ -1,0 +1,55 @@
+---
+
+- name: Copying over harbor.yml
+  template:
+    src: harbor.yml.j2
+    dest: "{{ harbor_install_dir }}/harbor/harbor.yml"
+    mode: 0640
+  when:
+    - not harbor_folder_st.stat.exists or (harbor_folder_st.stat.isdir is defined and not harbor_folder_st.stat.isdir)
+
+- name: Copying over docker-compose.yml
+  template:
+    src: docker-compose.yml.j2
+    dest: "{{ harbor_install_dir }}/harbor/docker-compose.yml"
+    mode: 0640
+  when:
+    - not harbor_folder_st.stat.exists or (harbor_folder_st.stat.isdir is defined and not harbor_folder_st.stat.isdir)
+
+- name: Copying over prepare script
+  template:
+    src: prepare.j2
+    dest: "{{ harbor_install_dir }}/harbor/prepare"
+    mode: 0750
+    # mode: a+x
+  when:
+    - not harbor_folder_st.stat.exists or (harbor_folder_st.stat.isdir is defined and not harbor_folder_st.stat.isdir)
+
+- name: "Setting permissions on Harbor common folder......"
+  file:
+    dest: "{{ harbor_install_dir }}/harbor/common"
+    owner: 10000
+    mode: 0750
+    group: docker
+    recurse: true
+  when:
+    - not harbor_folder_st.stat.exists or (harbor_folder_st.stat.isdir is defined and not harbor_folder_st.stat.isdir)
+
+- name: "Setting permissions on nginx folder specifically..."
+  file:
+    dest: "{{ harbor_install_dir }}/harbor/common/config/nginx"
+    owner: 10000
+    mode: o+rx
+    group: docker
+    recurse: true
+  when:
+    - not harbor_folder_st.stat.exists or (harbor_folder_st.stat.isdir is defined and not harbor_folder_st.stat.isdir)
+
+
+- name: Changing registry realm if harbor_registry_realm_protocol is different from harbor_ui_url_protocol
+  replace:
+    path: "{{ harbor_install_dir }}/harbor/common/config/registry/config.yml"
+    regexp: 'realm: (https|http)://(.*)'
+    replace: 'realm: {{ harbor_registry_realm_protocol }}://\2'
+    backup: true
+  when: harbor_behind_proxy is defined and harbor_behind_proxy and harbor_registry_realm_protocol != harbor_ui_url_protocol

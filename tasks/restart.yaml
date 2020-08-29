@@ -1,5 +1,9 @@
 ---
 
+- debug:
+    msg: "Restarting Harbor because registry configuration changed"
+  when: harbor_behind_proxy is defined and harbor_behind_proxy and harbor_registry_realm_protocol != harbor_ui_url_protocol
+
 # docker-compose and restart have trouble with syslog logging driver
 # see https://github.com/goharbor/harbor/issues/129
 # To go around that, we explicitely stop and only then start again.

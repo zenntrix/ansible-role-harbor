@@ -1,0 +1,91 @@
+---
+
+- name: "Creating projects ..."
+  uri:
+    url: "{{ harbor_api_url }}/projects"
+    method: POST
+    user: "admin"
+    password: "{{ harbor_admin_password | default('Harbor12345') }}"
+    status_code:
+      - 201
+      - 409 # already created
+    body_format: json
+    force_basic_auth: true
+    return_content: true
+    body: "{{ lookup('template', 'templates/create_project.j2') }}"
+  when: harbor_projects is defined
+  with_items: "{{ harbor_projects }}"
+
+- name: "get projects"
+  uri:
+    url: "{{ harbor_api_url }}/projects?name={{ item.project_name }}&public={{ item.is_public }}"
+    method: GET
+    user: "admin"
+    password: "{{ harbor_admin_password | default('Harbor12345') }}"
+    force_basic_auth: true
+    return_content: true
+    body_format: json
+  register: harbor_existing_projects
+  with_items: "{{ harbor_projects }}"
+
+- debug:
+    msg: "{{ item[0].project_id }}"
+  loop:
+    - "{{ harbor_existing_projects.results[0].content }}"
+
+
+- name: "get users"
+  uri:
+    url: "{{ harbor_api_url }}/users/search?username={{ item.username }}"
+    method: GET
+    user: "admin"
+    password: "{{ harbor_admin_password | default('Harbor12345') }}"
+    force_basic_auth: true
+    return_content: true
+    body_format: json
+  register: harbor_existing_users
+  with_items: "{{ harbor_users }}"
+
+
+- debug:
+    msg: "{{ item[0].user_id }}"
+  loop:
+    - "{{ harbor_existing_users.results[0].content }}"
+
+
+
+- debug:
+    msg: "{{ item.0.project_id }}   -- {{ item.1.user_id }} -- {{ item.2.project_name }}"
+  with_nested:
+    - "{{ harbor_existing_projects.results[0].content }}"
+    - "{{ harbor_existing_users.results[0].content }}"
+    - "{{ harbor_projects }}"
+
+
+
+- name: add user to project
+  uri:
+    url: "{{ harbor_api_url }}/projects/{{ item.0.project_id }}/members"
+    method: POST
+    user: "admin"
+    password: "{{ harbor_admin_password | default('Harbor12345') }}"
+    status_code:
+      - 201
+      - 409 # already created
+    headers:
+      Content-Type: application/json
+      accept: application/json
+    body_format: json
+    force_basic_auth: true
+    return_content: true
+    # The role id 1 for projectAdmin, 2 for developer, 3 for guest, 4 for master
+    body: '{ "role_id": 1, "member_user": { "user_id": {{ item.1.user_id }}, "username": "{{ item.1.username }}" } }'
+#      member_user:
+        #user_id: "{{ item.1.user_id | int }}"
+        #username: "{{ item.1.username }}"
+
+  when: harbor_projects is defined
+  with_nested:
+    - "{{ harbor_existing_projects.results[0].content }}"
+    - "{{ harbor_existing_users.results[0].content }}"
+    - "{{ harbor_projects }}"
