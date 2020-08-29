@@ -4,3 +4,4 @@ local_tmp_directory: "/var/tmp/harbor/{{ harbor_version }}"
 
 harbor_packages:
   - openssl
+  - python36-docker # TODO platform depended
