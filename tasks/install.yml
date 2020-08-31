@@ -75,6 +75,38 @@
     - "nginx.http.conf"
     - "nginx.https.conf"
 
+# pre-configure
+
+- name: Copying over harbor.yml
+  template:
+    src: harbor.yml.j2
+    dest: "{{ harbor_install_dir }}/harbor/harbor.yml"
+    mode: 0640
+  when:
+    - not harbor_folder_st.stat.exists or (harbor_folder_st.stat.isdir is defined and not harbor_folder_st.stat.isdir)
+
+- name: Copying over docker-compose.yml
+  template:
+    src: docker-compose.yml.j2
+    dest: "{{ harbor_install_dir }}/harbor/docker-compose.yml"
+    mode: 0640
+  when:
+    - not harbor_folder_st.stat.exists or (harbor_folder_st.stat.isdir is defined and not harbor_folder_st.stat.isdir)
+
+- name: ensure that prepare scrit are executable
+  file:
+    name: "{{ harbor_install_dir }}/harbor/prepare"
+    mode: 0750
+# - name: Copying over prepare script
+#   template:
+#     src: prepare.j2
+#     dest: "{{ harbor_install_dir }}/harbor/prepare"
+#     mode: 0750
+#     # mode: a+x
+  when:
+    - not harbor_folder_st.stat.exists or (harbor_folder_st.stat.isdir is defined and not harbor_folder_st.stat.isdir)
+
+
 - name: Running Harbor installer...
   become: true
   command: "./install.sh {{ harbor_installer_with }} {{ harbor_installer_extra_args }}"
