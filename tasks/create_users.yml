@@ -8,7 +8,7 @@
     success_msg: "Password length is greater 8"
   with_items: "{{ harbor_users }}"
 
-- name: "Creating users ... "
+- name: "Creating users ... '{{ harbor_api_url }}/users'"
   uri:
     url: "{{ harbor_api_url }}/users"
     method: POST

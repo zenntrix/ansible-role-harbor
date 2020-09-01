@@ -2,6 +2,25 @@
 # vars file for ansible-role-harbor
 local_tmp_directory: "/var/tmp/harbor/{{ harbor_version }}"
 
-harbor_packages:
-  - openssl
-  - python36-docker # TODO platform depended
+#harbor_packages:
+#  - openssl
+#  - python36-docker # TODO platform depended
+
+_harbor_packages:
+  default:
+    - openssl
+    - python3-docker
+  centos:
+    - openssl
+    - python36-docker
+  debian:
+    - openssl
+    - python3-docker
+    - python3-pip
+
+
+harbor_packages: "{{ _harbor_packages[ansible_distribution | lower ~ '-' ~ ansible_distribution_major_version ] |
+  default(_harbor_packages[ansible_distribution | lower ~ '-' ~ ansible_distribution_major_version] |
+  default(_harbor_packages[ansible_distribution | lower] |
+  default(_harbor_packages['default']))) }}"
+

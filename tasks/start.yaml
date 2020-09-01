@@ -6,3 +6,5 @@
     files: "{{ harbor_docker_compose_files }}"
     state: present
     timeout: 30
+  environment:
+    PATH: "/usr/local/bin:{{ ansible_env.PATH }}"

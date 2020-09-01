@@ -1,9 +1,9 @@
 ---
 
-#- name: install dedendency
-#  package:
-#    name: "{{ harbor_packages }}"
-#    state: present
+- name: install dedendency
+  package:
+    name: "{{ harbor_packages }}"
+    state: present
 
 - block:
 
@@ -118,3 +118,30 @@
     TERM: xterm
   when:
     - not harbor_folder_st.stat.exists or (harbor_folder_st.stat.isdir is defined and not harbor_folder_st.stat.isdir)
+
+- name: wait for running harbor
+  wait_for:
+    host: '{{ harbor_hostname }}'
+    port: "{{ harbor_exposed_http_port }}"
+    delay: 1              # No wait before first check (sec)
+    timeout: 5            # Stop checking after timeout (sec)
+  ignore_errors: false
+  retries: 10
+  delay: 10
+
+- name: wait for health
+  uri:
+    url: "http://127.0.0.1/api/version"
+    method: GET
+#    user: "admin"
+#    password: "{{ harbor_admin_password | default('Harbor12345') }}"
+    status_code:
+      - 200
+    headers:
+      Content-Type: application/json
+    body_format: json
+    force_basic_auth: true
+    return_content: true
+  ignore_errors: false
+  retries: 10
+  delay: 10
