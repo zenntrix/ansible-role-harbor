@@ -12,5 +12,33 @@
 - include_tasks: restart.yaml
   when: harbor_behind_proxy is defined and harbor_behind_proxy and harbor_registry_realm_protocol != harbor_ui_url_protocol
 
+- name: check if harbor are available
+  wait_for:
+    host: '127.0.0.1'
+    port: '80'
+    delay: 15             # No wait before first check (sec)
+    timeout: 5            # Stop checking after timeout (sec)
+  ignore_errors: true
+  retries: 10
+  delay: 10
+
+- name: "check availibility ... '{{ harbor_api_url }}/version'"
+  uri:
+    url: "{{ harbor_ui_url_protocol }}://{{ harbor_hostname }}:{{ harbor_api_port }}/api/version"
+    method: GET
+    status_code:
+      - 200
+    headers:
+      Content-Type: application/json
+    body_format: json
+    return_content: true
+  register: harbor_version
+  ignore_errors: true
+  retries: 10
+  delay: 20
+
+- debug:
+    msg: "{{ harbor_version }}"
+
 - include_tasks: create_users.yml
 - include_tasks: create_projects.yml
