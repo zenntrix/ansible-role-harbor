@@ -10,9 +10,9 @@ harbor_url: "{{ http_server }}/harbor-offline-installer-v{{ harbor_version }}.tg
 
 
 harbor_installer_extra_args:
-harbor_extras:
-        #- clair
-        #- notary
+#harbor_extras:
+#        #- clair
+#        #- notary
 
 # Will create harbor folder inside
 harbor_install_dir: /opt
@@ -28,7 +28,7 @@ harbor_port: 80
 # from Harbor's nginx configuration according to the troubleshooting section.
 # https://github.com/goharbor/harbor/blob/master/docs/installation_guide.md#troubleshooting
 # REMEMBER to put this line on YOUR proxy configuration, though.
-harbor_behind_proxy: no
+harbor_behind_proxy: false
 
 # If you are running behind a proxy and the proxy terminates SSL, you need to set this to "https"
 # as this dictates the *external* access to the registry.
@@ -56,6 +56,8 @@ harbor_api_url: "{{ harbor_ui_url_protocol }}://{{ harbor_hostname }}:{{ harbor_
 harbor_ssl_cert: "{{ harbor_install_dir }}/harbor/ssl/harbor.crt"
 harbor_ssl_cert_key: "{{ harbor_install_dir }}/harbor/ssl/harbor.key"
 
+harbor_projects: []
+
 # Example to create project on install
 # harbor_projects:
 #   - project_name: test
@@ -65,7 +67,21 @@ harbor_ssl_cert_key: "{{ harbor_install_dir }}/harbor/ssl/harbor.key"
 #     severity: "high"
 #     auto_scan: "true"
 
+harbor_users: []
 
-harbor_installer_with:
+#  - username: foo
+#    password: bar12345
+#    email: foo@test.lan
+#    realname: automatic build
+#    role_name: developer
+#    has_admin_role: false
+
+
+harbor_installer_with: []
+#  --with-notary if needs enable Notary in Harbor
+#  --with-clair if needs enable Clair in Harbor
+#  --with-trivy if needs enable Trivy in Harbor
+#  --with-chartmuseum if needs enable Chartmuseum in Harbor
+
 harbor_extra_compose_files:
 harbor_docker_compose_files:

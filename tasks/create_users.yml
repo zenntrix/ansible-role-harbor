@@ -6,7 +6,7 @@
       - item.password | default("HarborUser12345") | length > 8
     quiet: true
     success_msg: "Password length is greater 8"
-  with_items: "{{ harbor_users }}"
+  with_items: "{{ harbor_users | default(omit) }}"
 
 - name: "Creating users ... '{{ harbor_api_url }}/users'"
   uri:
@@ -24,5 +24,4 @@
     return_content: true
     body: "{{ lookup('template', 'templates/create_user.j2') }}"
   when: harbor_users is defined and harbor_self_registration == "off"
-  with_items: "{{ harbor_users }}"
-
+  with_items: "{{ harbor_users | default(omit) }}"

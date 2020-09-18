@@ -17,10 +17,13 @@ _harbor_packages:
     - openssl
     - python3-docker
     - python3-pip
-
+  alpine:
+    - tar
+    - bash
+    - ncurses # for tput
+    - docker-compose
 
 harbor_packages: "{{ _harbor_packages[ansible_distribution | lower ~ '-' ~ ansible_distribution_major_version ] |
   default(_harbor_packages[ansible_distribution | lower ~ '-' ~ ansible_distribution_major_version] |
   default(_harbor_packages[ansible_distribution | lower] |
   default(_harbor_packages['default']))) }}"
-

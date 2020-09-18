@@ -12,6 +12,7 @@
       file:
         path: "{{ local_tmp_directory }}"
         state: directory
+        mode: 0700
       delegate_to: localhost
 
     - name: "Downloading Harbor {{ harbor_version }} (offline installer)"
@@ -45,6 +46,7 @@
     remote_src: true
     src: /tmp/harbor.tgz
     dest: "{{ harbor_install_dir }}"
+    mode: 0750
     creates: "{{ harbor_install_dir }}/harbor"
   when:
     - not harbor_folder_st.stat.exists or (harbor_folder_st.stat.isdir is defined and not harbor_folder_st.stat.isdir)
@@ -58,7 +60,17 @@
     - not harbor_folder_st.stat.exists or (harbor_folder_st.stat.isdir is defined and not harbor_folder_st.stat.isdir)
 
 - name: Generate self-signed cert with openssl
-  command: openssl req -newkey rsa:4096 -nodes  -sha256 -keyout '{{ harbor_ssl_cert_key }}' -subj '{{ harbor_ssl_self_subject }}' -new  -x509 -days '{{ harbor_ssl_self_days }}' -out '{{ harbor_ssl_cert }}'
+  command: |
+    openssl req
+    -newkey rsa:4096
+    -nodes
+    -sha256
+    -keyout '{{ harbor_ssl_cert_key }}'
+    -subj '{{ harbor_ssl_self_subject }}'
+    -new
+    -x509
+    -days '{{ harbor_ssl_self_days }}'
+    -out '{{ harbor_ssl_cert }}'
   args:
     creates: '{{ harbor_ssl_cert }}' # don't write over a cert
   when:
@@ -93,7 +105,7 @@
   when:
     - not harbor_folder_st.stat.exists or (harbor_folder_st.stat.isdir is defined and not harbor_folder_st.stat.isdir)
 
-- name: ensure that prepare scrit are executable
+- name: ensure that prepare script are executable
   file:
     name: "{{ harbor_install_dir }}/harbor/prepare"
     mode: 0750
@@ -106,28 +118,23 @@
   when:
     - not harbor_folder_st.stat.exists or (harbor_folder_st.stat.isdir is defined and not harbor_folder_st.stat.isdir)
 
-
-- name: Running Harbor installer...
+- name: Running Harbor installer in {{ harbor_install_dir }}/harbor ...
   become: true
-  command: "./install.sh {{ harbor_installer_with }} {{ harbor_installer_extra_args }}"
+  command: |
+    /bin/bash ./install.sh {{ harbor_installer_with | default([]) | join(' ') }} {{ harbor_installer_extra_args }}
   args:
     chdir: "{{ harbor_install_dir }}/harbor"
     creates: '{{ harbor_install_dir }}/harbor/harbor_install_log.txt'
   environment:
+    SHELL: /bin/bash
     PATH: "/usr/local/bin:{{ ansible_env.PATH }}"
     TERM: xterm
   when:
     - not harbor_folder_st.stat.exists or (harbor_folder_st.stat.isdir is defined and not harbor_folder_st.stat.isdir)
 
-- name: wait for running harbor
-  wait_for:
-    host: '{{ harbor_hostname }}'
-    port: "{{ harbor_exposed_http_port }}"
-    delay: 1              # No wait before first check (sec)
-    timeout: 5            # Stop checking after timeout (sec)
-  ignore_errors: false
-  retries: 10
-  delay: 10
+- name: wait 10 seconds for clean startup
+  pause:
+    seconds: 10
 
 - name: wait for health
   uri:
@@ -140,8 +147,12 @@
     headers:
       Content-Type: application/json
     body_format: json
-    force_basic_auth: true
+    #force_basic_auth: true
     return_content: true
+  register: harbor_version
   ignore_errors: false
   retries: 10
   delay: 10
+
+- debug:
+    msg: "{{ harbor_version }}"

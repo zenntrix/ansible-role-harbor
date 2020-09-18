@@ -14,7 +14,7 @@
     return_content: true
     body: "{{ lookup('template', 'templates/create_project.j2') }}"
   when: harbor_projects is defined
-  with_items: "{{ harbor_projects }}"
+  with_items: "{{ harbor_projects | default(omit) }}"
 
 - name: "get projects"
   uri:
@@ -26,12 +26,8 @@
     return_content: true
     body_format: json
   register: harbor_existing_projects
-  with_items: "{{ harbor_projects }}"
-
-# - debug:
-#     msg: "{{ item[0].project_id }}"
-#   loop:
-#     - "{{ harbor_existing_projects.results[0].content }}"
+  with_items: "{{ harbor_projects | default(omit) }}"
+  when: harbor_projects is defined
 
 - name: "get users"
   uri:
@@ -43,19 +39,7 @@
     return_content: true
     body_format: json
   register: harbor_existing_users
-  with_items: "{{ harbor_users }}"
-
-# - debug:
-#     msg: "{{ item[0].user_id }}"
-#   loop:
-#     - "{{ harbor_existing_users.results[0].content }}"
-#
-# - debug:
-#     msg: "{{ item.0.project_id }}   -- {{ item.1.user_id }} -- {{ item.2.project_name }}"
-#   with_nested:
-#     - "{{ harbor_existing_projects.results[0].content }}"
-#     - "{{ harbor_existing_users.results[0].content }}"
-#     - "{{ harbor_projects }}"
+  with_items: "{{ harbor_users | default(omit) }}"
 
 - name: add user to project
   uri:
@@ -74,7 +58,9 @@
     return_content: true
     # The role id 1 for projectAdmin, 2 for developer, 3 for guest, 4 for master
     body: '{ "role_id": 1, "member_user": { "user_id": {{ item.1.user_id }}, "username": "{{ item.1.username }}" } }'
-  when: harbor_projects is defined
+  when:
+    - harbor_existing_users is defined
+    - harbor_projects is defined and harbor_projects | count != 0
   with_nested:
     - "{{ harbor_existing_projects.results[0].content }}"
     - "{{ harbor_existing_users.results[0].content }}"

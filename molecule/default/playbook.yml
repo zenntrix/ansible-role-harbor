@@ -5,8 +5,12 @@
     NETRC: ''
   vars:
 
+    harbor_hostname: harbor
+    harbor_installer_with:
+      - --with-clair
+      - --with-chartmuseum
+
     ansible_python_interpreter: python3
 
   roles:
-    # - role: docker
     - role: ansible-role-harbor
