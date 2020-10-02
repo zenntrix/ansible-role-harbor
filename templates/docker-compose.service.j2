@@ -1,0 +1,25 @@
+# /etc/systemd/system/docker-compose-app.service
+
+[Unit]
+Description = Docker Compose Harbor Service
+Requires = docker.service
+After = docker.service
+
+[Service]
+WorkingDirectory = {{ harbor_install_dir }}/harbor
+
+# Environment=PATH=/usr/local/bin:{{ ansible_env.PATH }}
+
+ExecStart = /usr/bin/docker-compose up
+ExecStop = /usr/bin/docker-compose down
+
+RestartSec=5
+
+TimeoutStartSec = 0
+Restart = on-failure
+StartLimitIntervalSec = 60
+StartLimitBurst = 3
+
+[Install]
+WantedBy=multi-user.target
+

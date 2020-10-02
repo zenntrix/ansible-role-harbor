@@ -1,11 +1,16 @@
 ---
 
-- name: stop harbor
-  docker_compose:
-    debug: true
-    project_src: "{{ harbor_install_dir }}/harbor"
-    files: "{{ harbor_docker_compose_files }}"
-    state: absent
-    timeout: 30
-  environment:
-    PATH: "/usr/local/bin:{{ ansible_env.PATH }}"
+- name: ensure harbor is stopped
+  service:
+    name: harbor
+    state: stopped
+
+# - name: stop harbor
+#   docker_compose:
+#     debug: true
+#     project_src: "{{ harbor_install_dir }}/harbor"
+#     files: "{{ harbor_docker_compose_files }}"
+#     state: absent
+#     timeout: 30
+#   environment:
+#     PATH: "/usr/local/bin:{{ ansible_env.PATH }}"

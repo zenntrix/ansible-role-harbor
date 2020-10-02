@@ -5,6 +5,13 @@
     path: "{{ harbor_install_dir }}/harbor/common/config"
   register: harbor_folder_st
 
+- name: do facts module to get latest information
+  setup:
+    gather_subset:
+      - '!all'
+      - '!any'
+      - facter
+
 - include_tasks: install.yml
 - include_tasks: configure.yml
 
@@ -14,3 +21,13 @@
 
 - include_tasks: create_users.yml
 - include_tasks: create_projects.yml
+
+- name: remove install package
+  file:
+    path: "{{ item }}"
+    state: absent
+  loop:
+    - /tmp/harbor.tgz
+    - "{{ harbor_install_dir }}/harbor/harbor.v{{ harbor_version }}.tar.gz"
+
+- include_tasks: service.yml

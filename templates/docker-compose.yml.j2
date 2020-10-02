@@ -1,5 +1,6 @@
 version: '2.3'
 services:
+
   log:
     image: goharbor/harbor-log:v{{ harbor_version }}
     container_name: harbor-log
@@ -19,6 +20,7 @@ services:
       - 127.0.0.1:1514:10514
     networks:
       - harbor
+
   registry:
     image: goharbor/registry-photon:v{{ harbor_version }}
     container_name: registry
@@ -40,11 +42,12 @@ services:
     dns_search: .
     depends_on:
       - log
-    #logging:
-    #  driver: "syslog"
-    #  options:
-    #    syslog-address: "tcp://127.0.0.1:1514"
-    #    tag: "registry"
+    logging:
+      driver: "syslog"
+      options:
+        syslog-address: "tcp://harbor-log:10514"
+        tag: "registry"
+
   registryctl:
     image: goharbor/harbor-registryctl:v{{ harbor_version }}
     container_name: registryctl
@@ -68,11 +71,12 @@ services:
     dns_search: .
     depends_on:
       - log
-    #logging:
-    #  driver: "syslog"
-    #  options:
-    #    syslog-address: "tcp://127.0.0.1:1514"
-    #    tag: "registryctl"
+    logging:
+      driver: "syslog"
+      options:
+        syslog-address: "tcp://harbor-log:10514"
+        tag: "registryctl"
+
   postgresql:
     image: goharbor/harbor-db:v{{ harbor_version }}
     container_name: harbor-db
@@ -93,11 +97,12 @@ services:
       - ./common/config/db/env
     depends_on:
       - log
-    #logging:
-    #  driver: "syslog"
-    #  options:
-    #    syslog-address: "tcp://127.0.0.1:1514"
-    #    tag: "postgresql"
+    logging:
+      driver: "syslog"
+      options:
+        syslog-address: "tcp://harbor-log:10514"
+        tag: "postgresql"
+
   core:
     image: goharbor/harbor-core:v{{ harbor_version }}
     container_name: harbor-core
@@ -129,11 +134,12 @@ services:
     depends_on:
       - log
       - registry
-    #logging:
-    #  driver: "syslog"
-    #  options:
-    #    syslog-address: "tcp://127.0.0.1:1514"
-    #    tag: "core"
+    logging:
+      driver: "syslog"
+      options:
+        syslog-address: "tcp://harbor-log:10514"
+        tag: "core"
+
   portal:
     image: goharbor/harbor-portal:v{{ harbor_version }}
     container_name: harbor-portal
@@ -151,11 +157,11 @@ services:
     depends_on:
       - log
       - core
-    #logging:
-    #  driver: "syslog"
-    #  options:
-    #    syslog-address: "tcp://127.0.0.1:1514"
-    #    tag: "portal"
+    logging:
+      driver: "syslog"
+      options:
+        syslog-address: "tcp://harbor-log:10514"
+        tag: "portal"
 
   jobservice:
     image: goharbor/harbor-jobservice:v{{ harbor_version }}
@@ -180,11 +186,11 @@ services:
     depends_on:
       - redis
       - core
-    #logging:
-    #  driver: "syslog"
-    #  options:
-    #    syslog-address: "tcp://127.0.0.1:1514"
-    #    tag: "jobservice"
+    logging:
+      driver: "syslog"
+      options:
+        syslog-address: "tcp://harbor-log:10514"
+        tag: "jobservice"
   redis:
     image: goharbor/redis-photon:v{{ harbor_version }}
     container_name: redis
@@ -202,11 +208,12 @@ services:
     dns_search: .
     depends_on:
       - log
-    #logging:
-    #  driver: "syslog"
-    #  options:
-    #    syslog-address: "tcp://127.0.0.1:1514"
-    #    tag: "redis"
+    logging:
+      driver: "syslog"
+      options:
+        syslog-address: "tcp://harbor-log:10514"
+        tag: "redis"
+
   proxy:
     image: goharbor/nginx-photon:v{{ harbor_version }}
     container_name: nginx
@@ -231,11 +238,12 @@ services:
       - core
       - portal
       - log
-    #logging:
-    #  driver: "syslog"
-    #  options:
-    #    syslog-address: "tcp://127.0.0.1:1514"
-    #    tag: "proxy"
+    logging:
+      driver: "syslog"
+      options:
+        syslog-address: "tcp://harbor-log:10514"
+        tag: "proxy"
+
 networks:
   harbor:
     external: false

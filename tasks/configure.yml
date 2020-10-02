@@ -3,7 +3,7 @@
 - name: "Setting permissions on Harbor common folder......"
   file:
     dest: "{{ harbor_install_dir }}/harbor/common"
-    owner: 10000
+    #owner: 10000
     mode: 0750
     group: docker
     recurse: true
@@ -27,7 +27,6 @@
     replace: 'realm: {{ harbor_registry_realm_protocol }}://\2'
     backup: true
   when: harbor_behind_proxy is defined and harbor_behind_proxy and harbor_registry_realm_protocol != harbor_ui_url_protocol
-
 
 # - block:
 #

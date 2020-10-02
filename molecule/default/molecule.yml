@@ -10,7 +10,7 @@ lint: |
 platforms:
 
   - name: dind
-    image: bodsch/molecule-dind:latest
+    image: bodsch/molecule-dind:2010
     docker_host: "${DOCKER_HOST:-unix://run/docker.sock}"
     privileged: true
     volumes:
@@ -18,9 +18,9 @@ platforms:
 
 provisioner:
   name: ansible
-  ansible_args:
+  #ansible_args:
   #  - --diff
-    - -vvv
+  #  - -vvv
   config_options:
     defaults:
       deprecation_warnings: True

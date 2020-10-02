@@ -1,12 +1,19 @@
 ---
 
+- name: create systemd service unit
+  template:
+    src: "docker-compose.service.j2"
+    dest: "{{ systemd_lib_directory }}/harbor.service"
+    owner: root
+    group: root
+    mode: 0644
+
 - name: install dedendency
   package:
     name: "{{ harbor_packages }}"
     state: present
 
 - block:
-
     - name: create local temporary path
       become: false
       file:
@@ -30,16 +37,15 @@
         mode: 0644
 
   when:
-    - not harbor_folder_st.stat.exists or (harbor_folder_st.stat.isdir is defined and not harbor_folder_st.stat.isdir)
+    - not harbor_folder_st.stat.exists # or (harbor_folder_st.stat.isdir is defined and not harbor_folder_st.stat.isdir)
 
 - name: "Creating Harbor directory... ({{ harbor_install_dir }}/harbor)"
   file:
     path: "{{ harbor_install_dir }}"
     state: directory
     mode: 0644
-    # mode: o+r
   when:
-    - not harbor_folder_st.stat.exists or (harbor_folder_st.stat.isdir is defined and not harbor_folder_st.stat.isdir)
+    - not harbor_folder_st.stat.exists # or (harbor_folder_st.stat.isdir is defined and not harbor_folder_st.stat.isdir)
 
 - name: "Uncompressing Harbor installer..."
   unarchive:
@@ -47,9 +53,9 @@
     src: /tmp/harbor.tgz
     dest: "{{ harbor_install_dir }}"
     mode: 0750
-    creates: "{{ harbor_install_dir }}/harbor"
+    # creates: "{{ harbor_install_dir }}/harbor"
   when:
-    - not harbor_folder_st.stat.exists or (harbor_folder_st.stat.isdir is defined and not harbor_folder_st.stat.isdir)
+    - not harbor_folder_st.stat.exists | bool # or (harbor_folder_st.stat.isdir is defined and not harbor_folder_st.stat.isdir)
 
 - name: Creating SSL certs folder
   file:
@@ -97,13 +103,13 @@
   when:
     - not harbor_folder_st.stat.exists or (harbor_folder_st.stat.isdir is defined and not harbor_folder_st.stat.isdir)
 
-- name: Copying over docker-compose.yml
-  template:
-    src: docker-compose.yml.j2
-    dest: "{{ harbor_install_dir }}/harbor/docker-compose.yml"
-    mode: 0640
-  when:
-    - not harbor_folder_st.stat.exists or (harbor_folder_st.stat.isdir is defined and not harbor_folder_st.stat.isdir)
+# - name: Copying over docker-compose.yml
+#   template:
+#     src: docker-compose.yml.j2
+#     dest: "{{ harbor_install_dir }}/harbor/docker-compose.yml"
+#     mode: 0640
+#   when:
+#     - not harbor_folder_st.stat.exists or (harbor_folder_st.stat.isdir is defined and not harbor_folder_st.stat.isdir)
 
 - name: ensure that prepare script are executable
   file:
@@ -132,9 +138,17 @@
   when:
     - not harbor_folder_st.stat.exists or (harbor_folder_st.stat.isdir is defined and not harbor_folder_st.stat.isdir)
 
-- name: wait 10 seconds for clean startup
+- name: collect facts about system services
+  service_facts:
+  register: services_state
+
+- name: Debug
+  debug:
+    var: services_state.services.harbor
+
+- name: wait 15 seconds for clean startup
   pause:
-    seconds: 10
+    seconds: 15
 
 - name: wait for health
   uri:
@@ -149,7 +163,8 @@
     body_format: json
     #force_basic_auth: true
     return_content: true
-  register: harbor_version
+  register: _harbor_version
+  until: _harbor_version is succeeded
   ignore_errors: false
   retries: 10
   delay: 10

@@ -1,10 +1,16 @@
 ---
 
-- name: start harbor
-  docker_compose:
-    project_src: "{{ harbor_install_dir }}/harbor"
-    files: "{{ harbor_docker_compose_files }}"
-    state: present
-    timeout: 30
-  environment:
-    PATH: "/usr/local/bin:{{ ansible_env.PATH }}"
+- name: ensure harbor is started
+  service:
+    name: harbor
+    state: started
+    enabled: true
+
+# - name: start harbor
+#   docker_compose:
+#     project_src: "{{ harbor_install_dir }}/harbor"
+#     files: "{{ harbor_docker_compose_files }}"
+#     state: present
+#     timeout: 30
+#   environment:
+#     PATH: "/usr/local/bin:{{ ansible_env.PATH }}"
