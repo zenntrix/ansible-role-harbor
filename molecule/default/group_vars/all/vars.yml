@@ -1,0 +1,7 @@
+---
+ansible_python_interpreter: python3
+
+harbor_hostname: harbor
+harbor_installer_with:
+  - --with-clair
+  - --with-chartmuseum

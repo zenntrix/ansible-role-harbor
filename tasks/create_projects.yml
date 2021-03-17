@@ -8,7 +8,7 @@
     password: "{{ harbor_admin_password | default('Harbor12345') }}"
     status_code:
       - 201
-      - 409 # already created
+      - 409  # already created
     body_format: json
     force_basic_auth: true
     return_content: true
@@ -49,7 +49,7 @@
     password: "{{ harbor_admin_password | default('Harbor12345') }}"
     status_code:
       - 201
-      - 409 # already created
+      - 409  # already created
     headers:
       Content-Type: application/json
       accept: application/json

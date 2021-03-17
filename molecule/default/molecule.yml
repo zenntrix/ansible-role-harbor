@@ -1,41 +1,35 @@
 ---
+dependency:
+  name: galaxy
 
 driver:
   name: docker
 
 lint: |
-    yamllint .
-    ansible-lint .
+  set -e
+  yamllint .
+  ansible-lint .
+  flake8 .
 
 platforms:
-
-  - name: dind
-    image: bodsch/molecule-dind:2010
+  - name: "${INSTANCE:-instance}"
+    image: bodsch/molecule-dind:210309
+    command: ${MOLECULE_DOCKER_COMMAND:-""}
     docker_host: "${DOCKER_HOST:-unix://run/docker.sock}"
     privileged: true
+    pre_build_image: true
     volumes:
       - /sys/fs/cgroup:/sys/fs/cgroup:ro
 
 provisioner:
   name: ansible
-  #ansible_args:
-  #  - --diff
-  #  - -vvv
+  # ansible_args:
+  #   - --diff
+  #   - -vv
   config_options:
     defaults:
       deprecation_warnings: True
       stdout_callback: yaml
-      remote_tmp: /tmp/ansible-${USER}/tmp
-    diff:
-      always: True
-
-  lint:
-    name: ansible-lint
-  playbooks:
-    create: create.yml
-    prepare: prepare.yml
-    converge: playbook.yml
-    destroy: destroy.yml
 
 scenario:
   test_sequence:

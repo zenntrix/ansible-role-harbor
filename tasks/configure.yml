@@ -3,7 +3,6 @@
 - name: "Setting permissions on Harbor common folder......"
   file:
     dest: "{{ harbor_install_dir }}/harbor/common"
-    #owner: 10000
     mode: 0750
     group: docker
     recurse: true
@@ -27,28 +26,3 @@
     replace: 'realm: {{ harbor_registry_realm_protocol }}://\2'
     backup: true
   when: harbor_behind_proxy is defined and harbor_behind_proxy and harbor_registry_realm_protocol != harbor_ui_url_protocol
-
-# - block:
-#
-#   - include_tasks: stop.yaml
-#
-#   - name: update harbor.yml
-#     template:
-#       src: harbor.yml.j2
-#       dest: "{{ harbor_install_dir }}/harbor/harbor.yml"
-#       mode: 0640
-#
-#   - name: Running Harbor installer...
-#     become: true
-#     command: "./prepare"
-#     args:
-#       chdir: "{{ harbor_install_dir }}/harbor"
-#       creates: '{{ harbor_install_dir }}/harbor/harbor_prepare_log.txt'
-#     environment:
-#       PATH: "/usr/local/bin:{{ ansible_env.PATH }}"
-#       TERM: xterm
-#
-#   - include_tasks: start.yaml
-#
-#   when:
-#     - harbor_folder_st.stat.exists or (harbor_folder_st.stat.isdir is defined and not harbor_folder_st.stat.isdir)

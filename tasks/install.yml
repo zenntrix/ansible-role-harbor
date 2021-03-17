@@ -37,7 +37,7 @@
         mode: 0644
 
   when:
-    - not harbor_folder_st.stat.exists # or (harbor_folder_st.stat.isdir is defined and not harbor_folder_st.stat.isdir)
+    - not harbor_folder_st.stat.exists
 
 - name: "Creating Harbor directory... ({{ harbor_install_dir }}/harbor)"
   file:
@@ -45,7 +45,7 @@
     state: directory
     mode: 0755
   when:
-    - not harbor_folder_st.stat.exists # or (harbor_folder_st.stat.isdir is defined and not harbor_folder_st.stat.isdir)
+    - not harbor_folder_st.stat.exists
 
 - name: "Uncompressing Harbor installer..."
   unarchive:
@@ -53,9 +53,8 @@
     src: /tmp/harbor.tgz
     dest: "{{ harbor_install_dir }}"
     mode: 0750
-    # creates: "{{ harbor_install_dir }}/harbor"
   when:
-    - not harbor_folder_st.stat.exists | bool # or (harbor_folder_st.stat.isdir is defined and not harbor_folder_st.stat.isdir)
+    - not harbor_folder_st.stat.exists | bool
 
 - name: Creating SSL certs folder
   file:
@@ -78,7 +77,7 @@
     -days '{{ harbor_ssl_self_days }}'
     -out '{{ harbor_ssl_cert }}'
   args:
-    creates: '{{ harbor_ssl_cert }}' # don't write over a cert
+    creates: '{{ harbor_ssl_cert }}'  # don't write over a cert
   when:
     - not harbor_folder_st.stat.exists or (harbor_folder_st.stat.isdir is defined and not harbor_folder_st.stat.isdir)
 
@@ -103,24 +102,10 @@
   when:
     - not harbor_folder_st.stat.exists or (harbor_folder_st.stat.isdir is defined and not harbor_folder_st.stat.isdir)
 
-# - name: Copying over docker-compose.yml
-#   template:
-#     src: docker-compose.yml.j2
-#     dest: "{{ harbor_install_dir }}/harbor/docker-compose.yml"
-#     mode: 0640
-#   when:
-#     - not harbor_folder_st.stat.exists or (harbor_folder_st.stat.isdir is defined and not harbor_folder_st.stat.isdir)
-
 - name: ensure that prepare script are executable
   file:
     name: "{{ harbor_install_dir }}/harbor/prepare"
     mode: 0750
-# - name: Copying over prepare script
-#   template:
-#     src: prepare.j2
-#     dest: "{{ harbor_install_dir }}/harbor/prepare"
-#     mode: 0750
-#     # mode: a+x
   when:
     - not harbor_folder_st.stat.exists or (harbor_folder_st.stat.isdir is defined and not harbor_folder_st.stat.isdir)
 
@@ -142,10 +127,6 @@
   service_facts:
   register: services_state
 
-- name: Debug
-  debug:
-    var: services_state.services.harbor
-
 - name: wait 15 seconds for clean startup
   pause:
     seconds: 15
@@ -154,14 +135,11 @@
   uri:
     url: "http://127.0.0.1/api/version"
     method: GET
-#    user: "admin"
-#    password: "{{ harbor_admin_password | default('Harbor12345') }}"
     status_code:
       - 200
     headers:
       Content-Type: application/json
     body_format: json
-    #force_basic_auth: true
     return_content: true
   register: _harbor_version
   until: _harbor_version is succeeded
@@ -169,5 +147,6 @@
   retries: 10
   delay: 10
 
-- debug:
+- name: hatrbor version
+  debug:
     msg: "{{ harbor_version }}"
