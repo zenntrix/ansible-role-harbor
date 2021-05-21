@@ -1,6 +1,6 @@
 {
   "project_name": "{{ item.project_name }}",
-  "storage_limit": "{{ item.storage_limit | default("0") }}",
+  "storage_limit": "{{ item.storage_limit | default(0) }}",
   "metadata": {
     "public": "{{ item.is_public | default ("true") }}",
     "enable_content_trust": "{{ item.content_trust | default ("false") }}",
