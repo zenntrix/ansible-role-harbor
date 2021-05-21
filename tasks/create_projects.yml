@@ -41,29 +41,30 @@
   register: harbor_existing_users
   with_items: "{{ harbor_users | default(omit) }}"
 
-- name: add user to project
-  uri:
-    url: "{{ harbor_api_url }}/projects/{{ item.0.project_id }}/members"
-    method: POST
-    user: "admin"
-    password: "{{ harbor_admin_password | default('Harbor12345') }}"
-    status_code:
-      - 201
-      - 409  # already created
-    headers:
-      Content-Type: application/json
-      accept: application/json
-    body_format: json
-    force_basic_auth: true
-    return_content: true
-    # The role id 1 for projectAdmin, 2 for developer, 3 for guest, 4 for master
-    body: '{ "role_id": 1, "member_user": { "user_id": {{ item.1.user_id }}, "username": "{{ item.1.username }}" } }'
+-block:
+  - name: add user to project
+    uri:
+      url: "{{ harbor_api_url }}/projects/{{ item.0.project_id }}/members"
+      method: POST
+      user: "admin"
+      password: "{{ harbor_admin_password | default('Harbor12345') }}"
+      status_code:
+        - 201
+        - 409  # already created
+      headers:
+        Content-Type: application/json
+        accept: application/json
+      body_format: json
+      force_basic_auth: true
+      return_content: true
+      # The role id 1 for projectAdmin, 2 for developer, 3 for guest, 4 for master
+      body: '{ "role_id": 1, "member_user": { "user_id": {{ item.1.user_id }}, "username": "{{ item.1.username }}" } }'
+    with_nested:
+      - "{{ harbor_existing_projects.results[0].content }}"
+      - "{{ harbor_existing_users.results[0].content }}"
+      - "{{ harbor_projects }}"
   when:
     - harbor_existing_users is defined
     - harbor_existing_users | count > 0
     - harbor_projects is defined
     - harbor_projects | count > 0
-  with_nested:
-    - "{{ harbor_existing_projects.results[0].content }}"
-    - "{{ harbor_existing_users.results[0].content }}"
-    - "{{ harbor_projects }}"
