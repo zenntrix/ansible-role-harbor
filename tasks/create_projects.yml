@@ -41,7 +41,7 @@
   register: harbor_existing_users
   with_items: "{{ harbor_users | default(omit) }}"
 
--block:
+- block:
   - name: add user to project
     uri:
       url: "{{ harbor_api_url }}/projects/{{ item.0.project_id }}/members"
