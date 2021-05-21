@@ -59,7 +59,7 @@
     # The role id 1 for projectAdmin, 2 for developer, 3 for guest, 4 for master
     body: '{ "role_id": 1, "member_user": { "user_id": {{ item.1.user_id }}, "username": "{{ item.1.username }}" } }'
   when:
-    - harbor_existing_users is defined
+    - harbor_existing_users is defined and harbor_existing_users | count != 0
     - harbor_projects is defined and harbor_projects | count != 0
   with_nested:
     - "{{ harbor_existing_projects.results[0].content }}"
